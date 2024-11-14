@@ -80,7 +80,30 @@ class SearchHistory(models.Model):
     keyword = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f'{self.user.username} searched for {self.keyword}'
+
 class ViewHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='view_history')
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='view_history')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user.username} viewed {self.property.title}'
+
+class Notification(models.Model):
+    EVENT_CHOICES = [
+        ('booking_created', 'Booking Created'),
+        ('booking_status_changed', 'Booking Status Changed'),
+        ('new_review', 'New Review'),
+    ]
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    event_type = models.CharField(max_length=50, choices=EVENT_CHOICES)
+    content = models.TextField()
+    related_object_id = models.IntegerField(null=True, blank=True)  # ID связанного объекта
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Notification for {self.recipient.username} - {self.event_type}'

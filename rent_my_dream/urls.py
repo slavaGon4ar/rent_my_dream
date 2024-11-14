@@ -9,9 +9,17 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from listing.views import (
+    PropertyViewSet,
+    BookingViewSet,
+    ReviewViewSet,
+    UserViewSet,
+    SearchHistoryViewSet,
+    ViewHistoryViewSet,
+    NotificationViewSet
+)
 
-from listing.views import PropertyViewSet, BookingViewSet, ReviewViewSet, UserViewSet
-
+# Настройка схемы Swagger для документации API
 schema_view = get_schema_view(
     openapi.Info(
         title="Rent My Dream API",
@@ -22,11 +30,15 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+# Настройка маршрутов для ViewSets
 router = DefaultRouter()
-router.register(r'properties', PropertyViewSet)
-router.register(r'bookings', BookingViewSet)
+router.register(r'properties', PropertyViewSet, basename='properties')
+router.register(r'bookings', BookingViewSet, basename='booking-detail')
 router.register(r'reviews', ReviewViewSet)
 router.register(r'users', UserViewSet)
+router.register(r'search-history', SearchHistoryViewSet, basename='search-history')
+router.register(r'view-history', ViewHistoryViewSet, basename='view-history')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

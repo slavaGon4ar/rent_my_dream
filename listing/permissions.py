@@ -33,22 +33,21 @@ class IsOwnerOrLandlordBooking(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        # Проверяем доступ на уровне объекта (например, для методов PATCH, DELETE)
-
+        # Разрешаем безопасные методы для владельца бронирования или владельца объекта
         if request.method in SAFE_METHODS:
-            # Tenant может видеть только свои бронирования
             if request.user.role == 'tenant':
+                # Tenant может просматривать только свои бронирования
                 return obj.user == request.user
-
-            # Landlord может видеть бронирования только для своих объектов
             elif request.user.role == 'landlord':
+                # Landlord может просматривать бронирования для своих объектов
                 return obj.property.owner == request.user
 
+        # Проверка на уровне изменения объекта (PATCH, DELETE)
         # Tenant может редактировать и удалять только свои бронирования
         if request.user.role == 'tenant':
             return obj.user == request.user
 
-        # Landlord может редактировать и удалять только бронирования по своим объектам
+        # Landlord может редактировать и удалять только бронирования своих объектов
         elif request.user.role == 'landlord':
             return obj.property.owner == request.user
 

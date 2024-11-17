@@ -3,6 +3,7 @@ from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from listing.models import User
 from listing.models import Property, Booking, Review, SearchHistory, ViewHistory, Notification
 
 User = get_user_model()
@@ -11,18 +12,18 @@ class UserAuthenticationTest(APITestCase):
     def setUp(self):
         # Регистрируем пользователя через API
         url = reverse('api:user-list')
-        data = {'username': 'testuser', 'password': 'password123', 'role': 'tenant'}
+        data = {'username': 'tenant1', 'password': 'password123', 'role': 'tenant'}
         self.client.post(url, data)
 
     def test_token_obtain(self):
         url = reverse('api:token_obtain_pair')
-        response = self.client.post(url, {'username': 'testuser', 'password': 'password123'})
+        response = self.client.post(url, {'username': 'tenant1', 'password': 'password123'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
 
     def test_token_refresh(self):
-        user = User.objects.get(username='testuser')
+        user = User.objects.get(username='tenant1')
         refresh = RefreshToken.for_user(user)
         url = reverse('api:token_refresh')
         response = self.client.post(url, {'refresh': str(refresh)})
@@ -39,22 +40,26 @@ class PropertyCRUDTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_create_property(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         data = {
-            'title': 'Тестовое объявление',
-            'description': 'Описание тестового объявления',
-            'location': 'Berlin',
-            'price': 1500,
-            'room_count': 2,
-            'property_type': 'apartment',
-            'status': 'active'
+            "title": "Test Property",
+            "description": "A cozy apartment in the city center",
+            "location": "Berlin",
+            "price": "1500",  # строка, как в JSON-примере
+            "room_count": 2,
+            "property_type": "apartment",
+            "status": "active",
+            "created_at": "2024-11-14T01:38:57.891495Z",
+            "views": 0,
+            "owner": 30,  # ID пользователя landlord
+            "categories": [7]  # Убедитесь, что категория с ID 1 существует
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], data['title'])
 
     def test_get_property_list(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -69,7 +74,7 @@ class PropertyCRUDTest(APITestCase):
             status='active',
             owner=self.user
         )
-        url = reverse('api:property-detail', kwargs={'pk': property_obj.pk})
+        url = reverse('api:properties', kwargs={'pk': property_obj.pk})
         updated_data = {'title': 'Обновленное объявление'}
         response = self.client.patch(url, updated_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -86,7 +91,7 @@ class PropertyCRUDTest(APITestCase):
             status='active',
             owner=self.user
         )
-        url = reverse('api:property-detail', kwargs={'pk': property_obj.pk})
+        url = reverse('api:properties', kwargs={'pk': property_obj.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -167,21 +172,21 @@ class PropertyFilterSearchTest(APITestCase):
         )
 
     def test_search_by_keyword(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         response = self.client.get(url, {'search': 'квартира'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['title'], 'Квартира в центре')
 
     def test_filter_by_price_range(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         response = self.client.get(url, {'price__gte': 1500, 'price__lte': 2500})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['title'], 'Уютный дом в Мюнхене')
 
     def test_combined_filtering(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         response = self.client.get(url, {'location': 'Berlin', 'price__lte': 1500})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -197,7 +202,7 @@ class SearchHistoryTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_search_history_recorded(self):
-        url = reverse('api:property-list')
+        url = reverse('api:properties')
         response = self.client.get(url, {'search': 'Berlin'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         history = SearchHistory.objects.filter(user=self.user, keyword='Berlin')

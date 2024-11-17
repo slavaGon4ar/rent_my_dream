@@ -3,7 +3,6 @@ import pytest
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from listing.models import Property, Booking, Review, Notification, Category
-from listing.models import User
 
 User = get_user_model()
 
@@ -13,19 +12,27 @@ def api_client():
 
 @pytest.fixture
 def tenant_user(db):
-    return User.objects.create_user(username='tenant', email='tenant@example.com', password='password123', role='tenant')
+    return User.objects.create_user(username='tenant1', email='tenant@example.com', password='password123', role='tenant')
 
 @pytest.fixture
 def landlord_user(db):
-    return User.objects.create_user(username='landlord', email='landlord@example.com', password='password123', role='landlord')
-
+    user, created = User.objects.get_or_create(
+        id=30,  # Указание id для landlord
+        username='landlord',
+        defaults={
+            'email': 'landlord@example.com',
+            'password': 'password123',
+            'role': 'landlord'
+        }
+    )
+    return user
 
 @pytest.fixture
-def sample_property(db):
-    # Создаем категорию для примера
-    category = Category.objects.create(name="Sample Category")
+def category1(db):
+    return Category.objects.create(id=9, name="Test Category")
 
-    # Создаем экземпляр Property с нужными полями
+@pytest.fixture
+def sample_property(db, landlord_user, category1):
     property_instance = Property.objects.create(
         title='Sample Property',
         description='Description of sample property',
@@ -36,12 +43,9 @@ def sample_property(db):
         status='active',
         views=4294967295,
         created_at=datetime.now(),
-        owner_id=30  # ID собственника landlord
+        owner=landlord_user  # Ссылка на landlord_user
     )
-
-    # Добавляем категорию в поле categories
-    property_instance.categories.add(category)
-
+    property_instance.categories.set([category1])  # Применение set() для ManyToMany
     return property_instance
 
 @pytest.fixture
@@ -53,4 +57,3 @@ def booking(db, tenant_user, sample_property):
         end_date='2024-12-10',
         status='pending'
     )
-

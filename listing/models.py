@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None, role=None, **extra_fields):
@@ -46,7 +47,7 @@ class Property(models.Model):
     PROPERTY_TYPES = (('apartment', 'Apartment'), ('house', 'House'), ('studio', 'Studio'))
     STATUS_CHOICES = (('active', 'Active'), ('inactive', 'Inactive'))
 
-    title = models.CharField(max_length=255, unique_for_date='created_at')
+    title = models.CharField(max_length=255)
     description = models.TextField()
     location = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -67,6 +68,10 @@ class Booking(models.Model):
     end_date = models.DateField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError("End date must be after start date.")
 
 class Review(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='reviews')

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.urls import path, include
@@ -33,9 +34,9 @@ schema_view = get_schema_view(
 # Настройка маршрутов для ViewSets
 router = DefaultRouter()
 router.register(r'properties', PropertyViewSet, basename='properties')
-router.register(r'bookings', BookingViewSet, basename='booking-detail')
-router.register(r'reviews', ReviewViewSet)
-router.register(r'users', UserViewSet)
+router.register(r'bookings', BookingViewSet, basename='booking')
+router.register(r'reviews', ReviewViewSet, basename='review')
+router.register(r'users', UserViewSet, basename='user-list')
 router.register(r'search-history', SearchHistoryViewSet, basename='search-history')
 router.register(r'view-history', ViewHistoryViewSet, basename='view-history')
 router.register(r'notifications', NotificationViewSet, basename='notification')
@@ -51,3 +52,10 @@ urlpatterns = [
         path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     ], 'api'), namespace='api')),
 ]
+
+# Подключение debug_toolbar при DEBUG=True
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]

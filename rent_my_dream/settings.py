@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rent_my_dream.settings')
+#django.setup()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt',
+    'debug_toolbar',
 
     # My apps
     'listing',
@@ -58,6 +62,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'rent_my_dream.urls'
@@ -176,3 +182,8 @@ SWAGGER_SETTINGS = {
         }
     },
 }
+
+INTERNAL_IPS = [
+    '127.0.0.1',  # локальный IP
+    # другие IP-адреса, если нужно
+]
